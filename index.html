@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="stylesheet" href="normalise.css" />
+        <link rel="stylesheet" href="style.css" />
+        <link href="//fonts.googleapis.com/css?family=Yanone+Kaffeesatz:200,300,400,700" rel="stylesheet" />
+        <link href="//fonts.googleapis.com/css?family=Open+Sans:300,700" rel="stylesheet" />
+        <script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
+        <script>
+            KV_STORE_KEY = 'ec8c65a0-8e89-428e-8507-751c7ee3df5f';
+            KEY_LEFT = 37;
+            KEY_RIGHT = 39;
+        </script>
+
+        <script src="kv.js"></script>
+        <script src="imagesloaded.js"></script>
+        <script src="plunja.js"></script>
+        <title>Millswipe</title>
+    </head>
+
+    <body>
+        <header>Millswipe</header>
+        <div id="deck">
+            <div class="active intro card">
+                <div class="text">
+                    <h1 id="description"></h1>
+                    <p>
+                        Press <strong>&rarr;</strong> if you agree with the rumour. <br />
+                        Press <strong>&larr;</strong> if you don&rsquo;t.<br />
+                        We&rsquo;ll tally up everyone&rsquo;s predictions after Apple&rsquo;s event.
+                    </p>
+
+                    <p>
+                        <a data-action="start" class="start button">Take part</a>
+                        or <a data-action="results">view the results now</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <script type="text/html" data-template="millcard">
+            <div class="mill card" data-index="{{ card.index }}">
+                <img src="{{ card.image }}" width="750" height="248" />
+                <div class="info">
+                    <span class="text">{{ card.title }}</span>
+                    <div class="voting">
+                        <a class="vote down"></a>
+                        <a class="vote up"></a>
+                    </div>
+                </div>
+            </div>
+        </script>
+
+        <script type="text/html" data-template="resultcard">
+            <div class="active result card answered-{{ answered }}">
+                <h1>The results are in!</h1>
+
+                <ul>
+                    {% for result in results %}
+                        <li>
+                            <span class="text">{{ result.title }}</span>
+                            <span class="yes">{{ result.yes }}%</span>
+                            <span class="no">{{ result.no }}%</span>
+                        </li>
+                    {% endfor %}
+                </ul>
+
+                <p class="final">
+                    You agree with <strong>{{ agreed }}%</strong> of the
+                    public
+                </p>
+            </div>
+        </script>
+
+        <script>
+            $(document).ready(
+                function() {
+                    var templates = new TemplateRegistry();
+                    var key = window.location.hash ? window.location.hash.substr(1) : null;
+                    var kv = new KeyValueStore(KV_STORE_KEY);
+                    var keyboardReady = false;
+                    var shuffle = function(o) {
+                        for(var j, x, i = o.length; i; j = Math.floor(Math.random() * i), x = o[--i], o[i] = o[j], o[j] = x);
+                        return o;
+                    };
+
+                    var results = [];
+                    var myVotes = {};
+
+                    if(!key) {
+                        console && console.error('No Millswipe collection specified');
+                    } else {
+                        kv.getPair(key,
+                            function(data) {
+                                var deck = $('#deck');
+                                var cards = data.cards;
+                                var cardCount = cards.length;
+                                var prevCard = null;
+
+                                for(var i = 0; i < cards.length; i ++) {
+                                    cards[i].index = i;
+                                }
+
+                                cards = shuffle(cards);
+                                var pickNext = function() {
+                                    var card = cards.pop();
+
+                                    templates.get('millcard').on('render',
+                                        function(element) {
+                                            var el = $('<div>').append(element);
+
+                                            el.appendTo(deck);
+                                            el.find('.card').data('card', card);
+                                            el.find('.card').css('z-index', cardCount * 10).imagesLoaded(
+                                                function() {
+                                                    el.find('.card').addClass('active');
+                                                    if(prevCard) {
+                                                        prevCard.addClass('swipe');
+                                                        setTimeout(
+                                                            function() {
+                                                                prevCard.removeClass('active');
+                                                                prevCard = null;
+                                                                keyboardReady = true;
+                                                            },
+                                                            500
+                                                        );
+                                                    } else {
+                                                        keyboardReady = true;
+                                                    }
+                                                }
+                                            );
+
+                                            el.find('a.vote').on('click',
+                                                function(e) {
+                                                    var self = $(this);
+                                                    var direction = null;
+                                                    var card = el.find('.card');
+
+                                                    if(self.prop('disabled')) {
+                                                        return;
+                                                    }
+
+                                                    if(self.hasClass('up')) {
+                                                        direction = 'up';
+                                                    } else if(self.hasClass('down')) {
+                                                        direction = 'down';
+                                                    }
+
+                                                    card.trigger('vote', direction);
+                                                }
+                                            );
+
+                                            el.find('.card').on('vote',
+                                                function(e, direction) {
+                                                    var card = $(this);
+                                                    var index = card.attr('data-index');
+                                                    var subkey = key + '_' + index + '_' + direction;
+
+                                                    card.find('a').prop('disabled', true).addClass('disabled');
+                                                    keyboardReady = false;
+
+                                                    kv.incrementCounter(
+                                                        subkey,
+                                                        function() {
+                                                            prevCard = card.addClass(direction);
+                                                            myVotes[subkey] = 1;
+
+                                                            if(cards.length) {
+                                                                cardCount --;
+                                                                pickNext();
+                                                            } else {
+                                                                showResults();
+                                                            }
+                                                        },
+                                                        function() {
+                                                            console && console.error('Oops, sorry! There was a problem submitting your answer. Please try again :(');
+                                                        }
+                                                    );
+                                                }
+                                            );
+                                        }
+                                    ).render(
+                                        {
+                                            card: card
+                                        }
+                                    );
+                                };
+
+                                var showResults = function() {
+                                    kv.getPair(key,
+                                        function(data) {
+                                            var results = [];
+                                            var crowdAnswered = 0;
+                                            var answered = Object.keys(myVotes).length;
+                                            var agreed = 0;
+
+                                            $.each(data.cards,
+                                                function(index) {
+                                                    this.yes_key = key + '_' + index + '_up';
+                                                    this.yes = 0;
+
+                                                    this.no_key = key + '_' + index + '_down';
+                                                    this.no = 0;
+
+                                                    results.push(this);
+                                                }
+                                            );
+
+                                            kv.getCounters(
+                                                function(counters) {
+                                                    $.each(counters,
+                                                        function(key) {
+                                                            var value = this;
+
+                                                            for(var i = 0; i < results.length; i ++) {
+                                                                var result = results[i];
+
+                                                                if(result.yes_key == key) {
+                                                                    result.yes = value;
+                                                                } else if(result.no_key == key) {
+                                                                    result.no = value;
+                                                                }
+                                                            }
+                                                        }
+                                                    );
+
+                                                    $.each(results,
+                                                        function() {
+                                                            if(this.yes > this.no) {
+                                                                // More people said yes
+                                                                if(myVotes[this.yes_key]) {
+                                                                    agreed ++;
+                                                                }
+
+                                                                crowdAnswered ++;
+                                                            } else if(this.yes < this.no) {
+                                                                // More people said no
+                                                                if(myVotes[this.no_key]) {
+                                                                    agreed ++;
+                                                                }
+
+                                                                crowdAnswered ++;
+                                                            }
+                                                        }
+                                                    );
+
+                                                    for(var i = 0; i < results.length; i ++) {
+                                                        var result = results[i];
+
+                                                        result.yes = Math.round(result.yes / (result.yes + result.no) * 100, 0);
+                                                        result.no = Math.round(result.no / (result.yes + result.no) * 100, 0);
+                                                    }
+
+                                                    agreed = agreed / crowdAnswered * 100;
+                                                    templates.get('resultcard').on('render',
+                                                        function() {
+                                                            $('.card.result').css('background-image',
+                                                                'url(' + data.image + ')'
+                                                            );
+                                                        }
+                                                    ).renderTo(
+                                                        document.getElementById('deck'),
+                                                        {
+                                                            results: results,
+                                                            agreed: Math.round(agreed, 0),
+                                                            answered: answered
+                                                        }
+                                                    );
+                                                }
+                                            );
+                                        }
+                                    );
+                                }
+
+                                $('header').text(data.title);
+                                $('#description').html(data.description);
+
+                                $('.card.intro').css('background-image',
+                                    'url(' + data.image + ')'
+                                );
+
+                                $('[data-action="start"]').on('click',
+                                    function() {
+                                        var self = $(this);
+
+                                        if(self.prop('disabled')) {
+                                            return;
+                                        }
+
+                                        self.prop('disabled', true).addClass('disabled');
+                                        pickNext();
+                                    }
+                                );
+
+                                $('[data-action="results"]').on('click',
+                                    function() {
+                                        var self = $(this);
+
+                                        if(self.prop('disabled')) {
+                                            return;
+                                        }
+
+                                        self.prop('disabled', true).addClass('disabled');
+                                        showResults();
+                                    }
+                                );
+                            },
+                            function() {
+                                console && console.error('No Millswipe collection found with that name');
+                            }
+                        );
+                    }
+
+                    $(window).on('keydown',
+                        function(e) {
+                            var direction;
+                            var activeCard;
+
+                            switch(e.keyCode) {
+                                case 37:
+                                    direction = 'down';
+                                    break;
+
+                                case 39:
+                                    direction = 'up';
+                                    break;
+
+                                default:
+                                    return;
+                            }
+
+                            if(!keyboardReady) {
+                                if(typeof(console) != 'undefined') {
+                                    console.warn('Woah now!');
+                                }
+
+                                return;
+                            }
+
+                            activeCard = $('#deck .card.active');
+                            if(activeCard) {
+                                activeCard.trigger('vote', direction);
+                            }
+                        }
+                    );
+                }
+            );
+        </script>
+    </body>
+</html>

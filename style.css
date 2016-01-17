@@ -1,0 +1,293 @@
+* {
+    -webkit-user-select: none;
+    cursor: default;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+}
+
+#deck {
+    width: 100%;
+    position: absolute;
+    top: 40px;
+    bottom: 0;
+    overflow: hidden;
+}
+
+header {
+    background: #333;
+    color: #fff;
+    line-height: 40px;
+    padding: 0 15px;
+    font-family: 'Yanone Kaffeesatz';
+    text-transform: uppercase;
+    font-weight: 200;
+    font-size: 18px;
+}
+
+a {
+    color: #009;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+a:hover {
+    color: #006;
+}
+
+.card {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #fff;
+}
+
+.card img {
+    display: block;
+    max-width: 100%;
+}
+
+.info {
+    border-top: 1px solid #ccc;
+    padding: 20px 0 20px 0;
+    position: fixed;
+    bottom: 0;
+    background: #fff;
+    width: 100%;
+}
+
+.voting {
+    float: right;
+    width: 33%;
+}
+
+a.vote {
+    width: 45%;
+    max-width: 93px;
+    height: 93px;
+    display: block;
+    float: left;
+    margin-right: 5%;
+    border-radius: 50%;
+    -moz-border-radius: 50%;
+    -webkit-border-radius: 50%;
+    -ms-border-radius: 50%;
+}
+
+.vote.disabled {
+    opacity: .5;
+}
+
+.vote.up {
+    background: #00D936 url('img/vote.up.png') no-repeat;
+    background-size: cover;
+    background-position: center;
+}
+
+.vote.up:hover {
+    background-color: #00C200;
+}
+
+.vote.up.disabled:hover {
+    background-color: #00D936;
+}
+
+.vote.down {
+    background: #D93600 url('img/vote.down.png') no-repeat;
+    background-size: cover;
+    background-position: center;
+}
+
+.vote.down:hover {
+    background-color: #C21A00;
+}
+
+.vote.down.disabled:hover {
+    background-color: #D93600;
+}
+
+.card {
+    opacity: 0;
+}
+
+.card.active {
+    opacity: 1;
+}
+
+.card .text, .card .yes, .card .no, .card p.final {
+    font-family: 'Open Sans';
+    font-weight: 300;
+    font-size: 24px;
+    line-height: 36px;
+    margin: 20px 0 20px 20px;
+}
+
+@media only screen and (max-device-width: 768px) {
+    .card .text, .card .yes, .card .no, .card p.final {
+        font-size: 16px;
+        margin-top: 10px;
+        line-height: 24px;
+    }
+}
+
+.card .text strong {
+    font-weight: 700;
+}
+
+.card.mill .text {
+    display: block;
+    margin: 0;
+    padding: 0 20px 20px 20px;
+    float: left;
+    width: 66%;
+}
+
+.card h1 {
+    font-family: 'Open Sans';
+    font-weight: 300;
+    font-weight: 300;
+    line-height: 1.25em;
+    margin: 0 0 .5em 0;
+}
+
+.card.intro {
+    color: #fff;
+}
+
+.card.intro a {
+    color: #fff;
+    text-decoration: underline;
+}
+
+.card.intro a:hover {
+    color: #fff;
+    text-decoration: none;
+}
+
+.card.intro a.disabled {
+    opacity: .5;
+}
+
+.button {
+    background: #d9534f;
+    color: #fff;
+    font-family: 'Yanone Kaffeesatz';
+    text-transform: uppercase;
+    display: inline-block;
+    padding: 10px 20px;
+    line-height: 1em;
+}
+
+.card.intro a.button {
+    text-decoration: none;
+}
+
+.button:hover {
+    color: #fff;
+}
+
+.swipe.up, .swipe.down {
+    transition: all linear .5s;
+    -webkit-transition: all ease .5s;
+    -moz-transition: all ease .5s;
+}
+
+.swipe.down {
+    transform: translateX(-100%) rotate(-60deg);
+    -webkit-transform: translateX(-100%) rotate(-60deg);
+    -moz-transform: translateX(-100%) rotate(-60deg);
+    opacity: 0;
+}
+
+.swipe.up {
+    transform: translateX(100%) rotate(60deg);
+    -webkit-transform: translateX(100%) rotate(60deg);
+    -moz-transform: translateX(100%) rotate(60deg);
+    opacity: 0;
+}
+
+.card.result {
+    height: 422px;
+    top: 0;
+    position: absolute;
+    overflow: scroll;
+    background-position: 0 40px;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+}
+
+.card.result ul {
+    padding: 0 20px 100px 20px;
+    margin: 0 0 0 0;
+    list-style-type: none;
+    width: 100%;
+    float: left;
+    clear: both;
+}
+
+.card.result ul li {
+    margin-bottom: .5em;
+    width: 100%;
+    float: left;
+    clear: both;
+    color: #fff;
+}
+
+.card.result ul li .text {
+    float: left;
+    width: 70%;
+    margin: 0;
+}
+
+.card.result ul li .yes {
+    float: left;
+    width: 15%;
+    margin: 0;
+    padding-left: 43px;
+    background: url('img/vote.up.text.png') no-repeat center left;
+    background-size: auto 100%;
+}
+
+.card.result ul li .no {
+    float: left;
+    width: 15%;
+    margin: 0;
+    padding-left: 43px;
+    background: url('img/vote.down.text.png') no-repeat bottom left;
+    background-size: auto 100%;
+}
+
+.card.result h1 {
+    margin: 20px;
+    color: #fff;
+}
+
+.card.result p.final {
+    padding: 20px;
+    margin: 0;
+    font-size: 18px;
+    line-height: 1.5em;
+    color: #666;
+    background: #eee;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+}
+
+@media only screen and (max-device-width: 768px) {
+    .card.result p.final {
+        line-height: 24px;
+    }
+}
+
+.card.result.answered-0 p.final {
+    display: none;
+}
